@@ -13,27 +13,14 @@ charge_link = [19.89,  50];
 nom_rove    = [45.01, 25];
 charge_min  = [20.76, 50];  %update this solar in
                             %with new power calculations
-
-
-%relevant time invterals (same as current google sheets)
-landing_intervals = [0: .25: 0];
-deploy_intervals  = [.25: .25: .25];
-rove_intervals    = [(.5: .25: 5.25),(9.5: .25: 15.75), ...
-                   (21.75: .25: 27.75), (33.75: .25: 39.25), ...
-                   (45.75 : .25 : 50)];
-             
-charge_intervals  = setdiff([.5: .25: 50], rove_intervals);
-    
-
                             
-%plan_trek_interval = [0: .25: 1];
-%downlink_interval  = [1: .25: 2];
-                            
-
-                                               
+plan_trek_interval = [0: .25: 1];
+downlink_interval  = [1: .25: 2];
+trek_phase1        = [plan_trek_interval, downlink_interval];
+                                                               
 %Battery Characteristics at Deployment
 battery_total = 200;
-init_soc       = .50;
+init_soc       = .40;
 
 %rover speed
 speed_centi  = 2;
@@ -49,7 +36,7 @@ distance_travelled = zeros(1,tv_length);
 
 
 %populating solar_incidence first since
-%the solar_in vector values are dependent on angle
+%the load_in vector values are dependent on angle
 index = 1;
 for spec_time = time_vector
      if (index > 1)
@@ -62,30 +49,31 @@ end
 
 
 index = 1;
-for spec_time = time_vector 
-    %solar angle in degrees, but must be in rad
+%this is the first two hours where we have downlink
+for spec_time = trek_phase1
+    %solar angle in degrees, but must be in rad for MATLAB
     curr_sangle_offset = cos(deg2rad(solar_incidence(index)));
     
-    if (ismember(spec_time, landing_intervals))
-        load_out(index) = landing(1);
-        load_in(index)  = landing(2)*curr_sangle_offset;
-    elseif (ismember(spec_time, deploy_intervals))
-        load_out(index) = deploy(1);
-        load_in(index)  = deploy(2)*curr_sangle_offset;
-    elseif (ismember(spec_time, rove_intervals))
-        load_out(index) = nom_rove(1);
-        load_in(index)  = nom_rove(2)*curr_sangle_offset;
-    else %this is the charge interval
+    if (ismember(spec_time, plan_trek_interval))
         load_out(index) = charge_min(1);
         load_in(index)  = charge_min(2)*curr_sangle_offset;
+    elseif (ismember(spec_time, downlink_interval))
+        load_out(index) = charge_link(1);
+        load_in(index)  = charge_link(2)*curr_sangle_offset;
     end
+    
+    net_power(index) = load_in(index) - load_out(index);
+
+    if (index > 1)
+        battery_cap(index) = battery_cap(index-1) + time_step*net_power(index);
+        battery_soc(index) = battery_cap(index)/battery_total;    
+    else
+        battery_cap(1) = battery_total*init_soc + net_power(1);   
+    end
+    
     index = index + 1;
 end
 
-
-
-net_power = load_in(:) - load_out(:);
-battery_cap(1) = battery_total*init_soc + net_power(1);
 
 secs_in_step = time_step * 3600;
 meters_per_sec = speed_centi/100;
