@@ -1,17 +1,17 @@
 %to be modified down the road
 time_start = 0;
 time_step  = .25;
-time_end   = 51;
+time_end   = 18;
 
 time_vector = time_start: time_step: time_end;
 tv_length = length(time_vector);
 
 %relevant modes where (1) load_out in Watts, (2) load_in in Watts
 %includes 30 percent power growth
-rove_link   = [45.01, 50];
-charge_link = [19.89,  50];
-nom_rove    = [45.01, 25];
-charge_min  = [20.76, 50];  %update this solar in
+rove_link   = [45.01, 41];
+charge_link = [19.28,  41];
+nom_rove    = [44.4, 25];
+charge_min  = [20.15, 41];  %update this solar in
                             %with new power calculations
                             
 plan_trek_interval = [0: .25: 1];
@@ -20,7 +20,7 @@ trek_phase1        = [plan_trek_interval, downlink_interval];
                                                                
 %Battery Characteristics at Deployment
 battery_total = 200;
-init_soc       = .40;
+init_soc      = .40;
 
 %rover speed
 speed_centi  = 2;
@@ -68,7 +68,8 @@ for spec_time = trek_phase1
         battery_cap(index) = battery_cap(index-1) + time_step*net_power(index);
         battery_soc(index) = battery_cap(index)/battery_total;    
     else
-        battery_cap(1) = battery_total*init_soc + net_power(1);   
+        battery_cap(1) = battery_total*init_soc + net_power(1);
+        battery_soc(1) = battery_cap(1)/battery_total;
     end
     
     index = index + 1;

@@ -1,4 +1,15 @@
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% START USER DEFINED PARAMETERS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%time_resolution = 
+
+begin_charge_soc = .5;
+end_charge_soc   = .6;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% END USER DEFINED PARAMETERS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %26 insurmountable rocks according to rock distribution data 
 rock_findings = [3, 5, 6.5, 9, 11.5, 14, 15.5, ...
                  16.5, 22, 24, 26.5, 28.75, ...
@@ -8,7 +19,7 @@ rock_findings = [3, 5, 6.5, 9, 11.5, 14, 15.5, ...
 
 is_charging = false;
 time_charging = 0;
-trek_phase2 = [2.25 : .25: 50.75];
+trek_phase2 = [2.25 : .25: 17.75];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %after initial two hours of charging, battery SOC should be at around 90%
@@ -17,26 +28,33 @@ trek_phase2 = [2.25 : .25: 50.75];
 %starting at index 11, since this is where contants file left off
 index = 11;
 for spec_time = trek_phase2
-    display(spec_time)
     rock_found = ismember(spec_time, rock_findings);
     curr_sangle_offset = cos(deg2rad(solar_incidence(index)));
     
     if (rock_found && ~is_charging)
-        display("rock was found")   
-        %a 90-degree point turn consumes about 96 joules of energy
-        
+        display("rock was found")         
         %we broke up the avoidance manuevers into 2 parts,
         %one part consists of energy expended by 2 90-degree point turns
-        %the second part consists of energy expended through skid-turn
-        battery_cap(index) = battery_cap(index-1) - 560/3600;
+        %the second part consists of energy expended while skid-steering
+        
+        %don't forget to also consider the energy used by avionics
+        %energy used by avionics during avoidance = power * 3mins * 60s/1min
+        %must convert it to Wh, so divide by 3600
+        
+        avoidance_duration = 3; %in mins
+        point_turn_energy = 10 * 28; %power*time for 90-degree turn
+        skid_energy = 1.2 * point_turn_energy; %according to papers we read
+        avionics_consumption = (45.01 * 3 * 60)/3600;
+        avoidance_consumption = (2*point_turn_energy + skid_energy)/3600;
+        battery_cap(index) = battery_cap(index-1) ...
+                             - avoidance_consumption - avionics_consumption;
         battery_soc(index) = battery_cap(index)/battery_total;
         distance_travelled(index) = distance_travelled(index-1)+distance_covered;
         index = index + 1;
         continue
     end
-    
-    display(battery_soc(index-1) < .25 && ~is_charging)
-    if (battery_soc(index-1) < .25 && ~is_charging)
+
+    if (battery_soc(index-1) < begin_charge_soc && ~is_charging)
         is_charging = true;
         
         load_out(index) = charge_min(1);
@@ -47,7 +65,7 @@ for spec_time = trek_phase2
         distance_travelled(index) = distance_travelled(index-1);
         display("STARTING TO CHARGE")
     elseif (is_charging)
-        if (battery_soc(index-1) >= .75)
+        if (battery_soc(index-1) >= end_charge_soc)
             
             display("DONE CHARGING")
             time_charging = 0;
