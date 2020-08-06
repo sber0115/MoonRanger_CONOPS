@@ -11,15 +11,22 @@ rove_duration    =  0; %in hours
 %%%%%% END USER DEFINED PARAMETERS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
 %26 insurmountable rocks according to rock distribution data 
 %need to change this to 40 rocks
 rock_findings = [150,153,156,159,165 ...
                  250, 256, 280];
+%rock_findings = [];
+shadow_findings = randi([121, 18*time_scale], 1, 100);
+%shadow_findings = []
 
 is_charging = false;
 is_avoiding = false;
+found_shadow = false;
+in_shadow    = false;
 time_avoiding = 0; %in mins
-trek_phase2 = [2*time_scale + time_step : time_step: time_end - 1];
+time_inshadow = 0; %in mins
+trek_phase2 = [2*time_scale + time_step : time_step: time_end];
 
 %we broke up the avoidance manuevers into 2 parts,
 %one part consists of energy expended by 2 90-degree point turns
@@ -33,18 +40,19 @@ point_turn_energy = 10 * 28; %power*time for 90-degree turn
 skid_energy = 1.2 * point_turn_energy; %according to papers we read
 
 %next two calculations need to incorporate time_scale somehow
-avionics_consumption = (45.01 * 1 * 60)/3600; %power * time in mins * 60s 
+avionics_consumption = (nom_rove(1) * 1 * 60)/3600; %power * time in mins * 60s 
 avoidance_consumption = (2*point_turn_energy + skid_energy)/(3600*avoidance_duration); %divide by 60 for per-minute consumption
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %after initial two hours of charging, battery SOC should be at around 90%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%starting at index 11, since this is where contants file left off
-index = 121;
+index = 122;
 for spec_time = trek_phase2
     sprintf("Current time and index: %d, %d", spec_time, index)
     rock_found = ismember(spec_time, rock_findings);
+    found_shadow = ismember(spec_time, shadow_findings);
+    
     curr_sangle_offset = cos(deg2rad(solar_incidence(index)));
     
     if (rock_found && ~is_charging)
@@ -62,7 +70,7 @@ for spec_time = trek_phase2
             is_avoiding = false;
             time_avoiding = 0;
             
-            energy_change = (time_step*net_power(index)) / time_scale;
+            energy_change = (time_step*curr_net_power) / time_scale;
             battery_cap(index) = battery_cap(index-1) + energy_change;
             battery_soc(index) = battery_cap(index)/battery_total;
             distance_travelled(index) = distance_travelled(index-1)+distance_covered;
@@ -83,11 +91,10 @@ for spec_time = trek_phase2
     if (battery_soc(index-1) < begin_charge_soc && ~is_charging)
         is_charging = true;
         
-        load_out(index) = charge_min(1);
-        load_in(index)  = charge_min(2)*curr_sangle_offset;
-        net_power(index) = load_in(index) - load_out(index);
-        
-        energy_change = (time_step*net_power(index)) / time_scale;
+        curr_load_out = charge_min(1);
+        curr_load_in  = charge_min(2)*curr_sangle_offset;
+        curr_net_power = curr_load_in - curr_load_out;
+        energy_change = (time_step*curr_net_power) / time_scale;
         battery_cap(index) = battery_cap(index-1) + energy_change;
         battery_soc(index) = battery_cap(index)/battery_total;
         distance_travelled(index) = distance_travelled(index-1);
@@ -96,10 +103,10 @@ for spec_time = trek_phase2
         if (battery_soc(index-1) >= end_charge_soc)
             
             display("DONE CHARGING")          
-            load_out(index) = nom_rove(1);
-            load_in(index)  = nom_rove(2);
-            net_power(index) = load_in(index) - load_out(index);
-            energy_change = (time_step*net_power(index)) / time_scale;
+            curr_load_out = nom_rove(1);
+            curr_load_in  = nom_rove(2);
+            curr_net_power = curr_load_in - curr_load_out;
+            energy_change = (time_step*curr_net_power) / time_scale;
             battery_cap(index) = battery_cap(index-1) + energy_change;
             battery_soc(index) = battery_cap(index)/battery_total;
             distance_travelled(index) = distance_travelled(index-1)+distance_covered;
@@ -108,20 +115,34 @@ for spec_time = trek_phase2
             index = index + 1;
             continue
         else
-            load_out(index) = charge_min(1);
-            load_in(index)  = charge_min(2)*curr_sangle_offset;
-            net_power(index) = load_in(index) - load_out(index);
-            energy_change = (time_step*net_power(index)) / time_scale;
+            curr_load_out = charge_min(1);
+            curr_load_in  = charge_min(2)*curr_sangle_offset;
+            curr_net_power = curr_load_in - curr_load_out;        
+            energy_change = (time_step*curr_net_power) / time_scale;
             battery_cap(index) = battery_cap(index-1) + energy_change;
             battery_soc(index) = battery_cap(index)/battery_total;
             distance_travelled(index) = distance_travelled(index-1);
             
         end
     else
-        load_out(index) = nom_rove(1);
-        load_in(index)  = nom_rove(2);
-        net_power(index) = load_in(index) - load_out(index);
-        energy_change = (time_step*net_power(index)) / time_scale;
+        curr_load_out = nom_rove(1);
+        curr_load_in  = nom_rove(2);
+        curr_net_power = curr_load_in - curr_load_out;
+        
+        if (found_shadow)
+            display("In shadow")
+            in_shadow = true;
+        elseif (in_shadow && time_inshadow < 3)
+            time_inshadow = time_inshadow + 1;
+            curr_net_power = -1*curr_load_out;   
+        elseif (time_inshadow == 3)
+            display("Escaped shadow")
+            in_shadow = false;
+            time_inshadow = 0;
+        end
+        
+        if (in_shadow); curr_net_power = -1*nom_rove(1); end
+        energy_change = (time_step*curr_net_power) / time_scale;
         battery_cap(index) = battery_cap(index-1) + energy_change;
         battery_soc(index) = battery_cap(index)/battery_total;
         distance_travelled(index) = distance_travelled(index-1)+distance_covered;
