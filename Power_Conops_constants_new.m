@@ -1,47 +1,42 @@
-%to be modified down the road
 
 %time_scale will change between 1 and 60 depending
-%on the user-input in main_new
+
 time_scale = 60;
 time_start = 0;
 time_step  = 1;   %change between .25 and 1, .25 hours, 1 min
-time_end   = 18*time_scale; %18 should be replaced by
-                            %rove_duration in main_new
+time_end   = trek_duration*time_scale; 
 
 time_vector = time_start: time_step: time_end;
 tv_length = length(time_vector);
 
 %relevant modes where (1) load_out in Watts, (2) load_in in Watts
 %includes 30 percent power growth
-rove_link   = [50, 24];
+
+rove_link   = [50, 48*panel_factor];
 charge_link = [32, 48];
-nom_rove    = [50, 24];
-charge_min  = [29, 48];  %update this solar in
-                            %with new power calculations
+nom_rove    = [50, 48*panel_factor];
+charge_min  = [29, 48];  
                             
-plan_trek_interval = [0: time_step: 1*time_scale];
-downlink_interval  = [1: time_step: 2*time_scale];
+plan_trek_interval = [0: time_step: plan_duration*time_scale];
+downlink_interval  = [plan_duration: time_step: downlink_duration*time_scale];
 trek_phase1        = [plan_trek_interval, downlink_interval];
                                                                
-%Battery Characteristics at Deployment
 battery_total = 200;
-init_soc      = .40;
-
 %rover speed
 speed_centi  = 2;
 speed_reg    = 7.2;
 
-load_out           = zeros(1,tv_length);
-load_in            = zeros(1,tv_length);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
 battery_soc        = zeros(1,tv_length);
-net_power          = zeros(1,tv_length);
 battery_cap        = zeros(1,tv_length);
-solar_incidence    = zeros(1,tv_length); %in radians
 distance_travelled = zeros(1,tv_length);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+solar_incidence    = zeros(1,tv_length); %in degrees
+
 
 
 %populating solar_incidence first since
-%the load_in vector values are dependent on angle
+%the load_in is dependent on angle
 index = 1;
 for spec_time = time_vector
      if (index > 1)
@@ -57,23 +52,47 @@ end
 
 
 index = 1;
-%this is the first two hours where we have downlink
+init_time_charging = 0; %in mins
+max_charge_time = max_charge_period*60;
+is_stored = false; %whether panel is stored to prevent overheating
+panel_stored_time = 0;
+max_panel_store_time = max_store_period * 60;
 for spec_time = trek_phase1
+    %sprintf("Current time and index: %d, %d", spec_time, index)
+    init_time_charging = init_time_charging + 1;
+    
     %solar angle in degrees, but must be in rad for MATLAB
     curr_sangle_offset = cos(deg2rad(solar_incidence(index)));
-    
     if (ismember(spec_time, plan_trek_interval))
-        load_out(index) = charge_min(1);
-        load_in(index)  = charge_min(2)*curr_sangle_offset;
+        curr_load_out = charge_min(1);
+        curr_load_in  = charge_min(2)*curr_sangle_offset;
     elseif (ismember(spec_time, downlink_interval))
-        load_out(index) = charge_link(1);
-        load_in(index)  = charge_link(2)*curr_sangle_offset;
+        curr_load_out = charge_link(1);
+        curr_load_in  = charge_link(2)*curr_sangle_offset;
     end
     
-    net_power(index) = load_in(index) - load_out(index);
+    if (mod(init_time_charging, max_charge_time) == 0)
+        %display(init_time_charging)
+        is_stored = true;
+        curr_load_in = 0;
+    elseif (is_stored)
+         if (panel_stored_time == max_panel_store_time)
+            %display("FINISHED STORING PANEL")
+            curr_load_in = 0;
+            is_stored = false;
+            panel_stored_time = 0;
+         else
+            %display("PANEL GOT STORED")
+            curr_load_in = 0;
+            panel_stored_time = panel_stored_time + 1;
+            %display(panel_stored_time)
+         end
+    end
+    
+    curr_net_power = curr_load_in - curr_load_out;
 
     if (index > 1)
-        energy_change = (time_step*net_power(index)) / time_scale;
+        energy_change = (time_step*curr_net_power) / time_scale;
         battery_cap(index) = battery_cap(index-1) + energy_change;
         battery_soc(index) = battery_cap(index)/battery_total;    
     else
@@ -83,6 +102,7 @@ for spec_time = trek_phase1
     
     index = index + 1;
 end
+
 
 meters_per_sec = speed_centi/100;
 distance_covered = meters_per_sec * time_step * time_scale;
