@@ -1,4 +1,5 @@
 run('user_params.m');
-run('Power_Conops_constants_new.m');
-run('Power_Conops_main_new.m');
+%run('move_rover.m');
+run('Power_Conops_constants.m');
+run('Power_Conops_main.m');
 run('Power_Conops_graphs.m');

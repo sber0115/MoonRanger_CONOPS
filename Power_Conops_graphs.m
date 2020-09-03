@@ -1,5 +1,5 @@
-rock_indexes = nonzeros(transpose(rock_indexes));
-rock_indexes = transpose(rock_indexes);
+%rock_indexes = nonzeros(transpose(rock_indexes));
+%rock_indexes = transpose(rock_indexes);
 
 figure
 subplot(2,2,1)
