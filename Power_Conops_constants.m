@@ -1,7 +1,9 @@
-time_scale = 60;
+time_scale = 60^2;
 time_start = 0;
 time_step  = 1;  
 time_end   = trek_duration*time_scale; 
+normalize = 3600;
+tolerance = 1e-2; 
 
 time_vector = time_start: time_step: time_end;
 tv_length = length(time_vector);
@@ -19,8 +21,8 @@ downlink_interval  = [plan_duration: time_step: downlink_duration*time_scale];
 trek_phase1        = [plan_trek_interval, downlink_interval];
                                                                
 battery_total = 200;
-speed_centi  = 2.5;
-%speed_reg    = 7.2 * duty_cycle;
+velocity_cm  = 2.5;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 battery_soc        = zeros(1,tv_length);
@@ -60,7 +62,7 @@ end
 
 
 time_charging = 0; %[mins]
-max_charge_time = max_charge_period*60;
+max_charge_time = max_charge_period*time_scale;
 is_heating_motors = false; 
 soc_under_100 = true;
 for i = 1:length(trek_phase1)
@@ -71,7 +73,6 @@ for i = 1:length(trek_phase1)
         continue;
     end
     
-    %sprintf("Current time and i: %d, %d", spec_time, i)
     time_charging = time_charging + 1;
     
     %solar angle in degrees, but must be in rad for MATLAB
@@ -85,7 +86,6 @@ for i = 1:length(trek_phase1)
     end
     
     if (mod(time_charging, max_charge_time) == 0)
-        %display(time_charging)
         is_heating_motors = true;
         curr_load_in = charge_min(2)*curr_sangle_offset - heat_motor_power;
     end
@@ -93,7 +93,7 @@ for i = 1:length(trek_phase1)
     curr_net_power = curr_load_in - curr_load_out;
 
     if (i > 1)
-        energy_change = (time_step*curr_net_power) / time_scale;
+        energy_change = curr_net_power / time_scale;
         battery_cap(i) = battery_cap(i-1) + energy_change;
         battery_soc(i) = battery_cap(i)/battery_total;    
     else
@@ -105,8 +105,8 @@ for i = 1:length(trek_phase1)
 end
 
 
-meters_per_sec = speed_centi/100;
-distance_covered = meters_per_sec * time_step * time_scale;
+velocity_m = velocity_cm/100;
+distance_covered = velocity_m;
 
 
 
