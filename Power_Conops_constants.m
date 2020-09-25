@@ -1,34 +1,35 @@
+%%
+%each element in time vector represents a 
+%second [time in seconds] increment
 time_scale = 60^2;
 time_start = 0;
 time_step  = 1;  
-time_end   = trek_duration*time_scale; 
-normalize = 3600;
-tolerance = 1e-2; 
+time_end   = trek_duration*time_scale; %[Hrs]*[36000 sec/Hr] = sec
+tolerance  = 1e-2; %used to check if battery state of charge exceeds 100%
 
 time_vector = time_start: time_step: time_end;
 tv_length = length(time_vector);
 
+%%
 %relevant modes where (1) load_out in Watts, (2) load_in in Watts
 %includes 30 percent power growth
-rove_link   = [51, 71.3*panel_factor];
-charge_link = [15, 71.3*panel_factor];
-nom_rove    = [46, 71.3*panel_factor];
-extreme_rove = [52, 71.3*panel_factor];
-charge_min  = [8, 71.3*panel_factor];  
-                            
+rove_link   = [51, 71.3];
+charge_link = [15, 71.3]; %if charging for over an hour, an extra 18W go to heaters
+nom_rove    = [46, 71.3];
+extreme_rove = [52, 71.3];
+charge_min  = [8, 71.3];  
+     
+%%
 plan_trek_interval = [0: time_step: plan_duration*time_scale];
 downlink_interval  = [plan_duration: time_step: downlink_duration*time_scale];
-trek_phase1        = [plan_trek_interval, downlink_interval];
-                                                               
-battery_total = 200;
-velocity_cm  = 2.5;
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%
+trek_phase1        = [plan_trek_interval, downlink_interval];                                                       
+battery_total = 200; %maximum battery energy capacity in W/hrs
+velocity_cm  = 2.5; %speed made good in cm/s
+velocity_m = velocity_cm/100;
+distance_covered = velocity_m;
 battery_soc        = zeros(1,tv_length);
 battery_cap        = zeros(1,tv_length);
 distance_travelled = zeros(1,tv_length);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%
 azimuth_angle    = zeros(1, tv_length); %in degrees
 
 
@@ -105,8 +106,7 @@ for i = 1:length(trek_phase1)
 end
 
 
-velocity_m = velocity_cm/100;
-distance_covered = velocity_m;
+
 
 
 

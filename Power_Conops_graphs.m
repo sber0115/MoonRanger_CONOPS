@@ -25,12 +25,10 @@ ylabel('Degrees')
 subplot(2,2,2)
 plot(time_vector/time_scale,battery_soc*100, 'color', 'k')
 hold on
-%plot(time_vector(rock_indexes)/60, battery_soc(rock_indexes)*100, 'color', 'r')
 title('Battery State-of-Charge vs Time')
 xlim([0, trek_duration])
 xticks(linspace(0,trek_duration, 10))
 xtickformat('%.1f')
-%ylim([(begin_charge_soc - .1)*100, 90])
 ylim([0,100]);
 xlabel('Time (hrs)')
 ylabel('State of Charge (100% Max)')
