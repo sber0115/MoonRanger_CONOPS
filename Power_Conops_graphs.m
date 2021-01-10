@@ -1,7 +1,6 @@
 
-%{
+
 figure
-subplot(2,2,1)
 plot(time_vector/time_scale,distance_travelled, 'color', 'k')
 title('Net Distance vs Time')
 xlabel('Time (hrs)')
@@ -11,7 +10,7 @@ xtickformat('%.1f')
 ylabel('Distance (m)')
 
 
-
+%{
 subplot(2,2,3)
 plot(time_vector/time_scale,azimuth_angle, 'color', 'k')
 title('Solar Azimuth Angle')
@@ -23,7 +22,7 @@ ylabel('Degrees')
 %}
 
 
-%subplot(2,2,2)
+figure
 plot(time_vector/time_scale,battery_soc*100, 'color', 'k')
 hold on
 title('Battery State-of-Charge vs Time')

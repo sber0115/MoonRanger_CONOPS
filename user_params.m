@@ -4,6 +4,7 @@ init_soc = .8;             %initial state of charge
 begin_charge_soc  = .70;
 end_charge_soc    = .85;
 trek_duration     =  28.5; %[Hrs]
+
 plan_duration     =  0;    %[Hrs]
 downlink_duration =  0;  %[Hrs, 1hr and 20mins]
 enable_rocks = true;
