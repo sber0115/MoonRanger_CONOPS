@@ -1,4 +1,5 @@
 
+%{
 figure
 subplot(2,2,1)
 plot(time_vector/time_scale,distance_travelled, 'color', 'k')
@@ -19,10 +20,10 @@ xlim([0, trek_duration])
 xticks(linspace(0,trek_duration, 10))
 xtickformat('%.1f')
 ylabel('Degrees')
+%}
 
 
-
-subplot(2,2,2)
+%subplot(2,2,2)
 plot(time_vector/time_scale,battery_soc*100, 'color', 'k')
 hold on
 title('Battery State-of-Charge vs Time')

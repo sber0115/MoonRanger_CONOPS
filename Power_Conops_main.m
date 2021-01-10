@@ -63,6 +63,13 @@ for i = length(trek_phase1)+1:length(time_vector)
     rock_found = ismember(spec_time, rock_findings);
     shadow_found = ismember(spec_time, shadow_findings);
     crater_found = ismember(spec_time, crater_findings);
+    change_power_fraction = ismember(spec_time, occ_times);
+    
+    if (change_power_fraction && occ_index < length(occ_times))
+       occ_index = occ_index + 1; 
+    end
+    power_fraction = occ_multipliers(occ_index);
+    
     %curr_solar_offset is the factor by which max power is multiplied (< 1)
     curr_solar_offset = cos(deg2rad(angle_offset(i)));
     
@@ -91,7 +98,7 @@ for i = length(trek_phase1)+1:length(time_vector)
         %expended over the duration of the entire manuever, so we must
         %divide by the manuever duration 
         avoidance_consumption = rock_turn_energy / (3600*rock_avoidance_duration); %[Wh/s]
-        curr_load_in = (extreme_rove(2)*curr_solar_offset/3600)*.5;    %[Wh/s]      
+        curr_load_in = (extreme_rove(2)*curr_solar_offset/3600);    %[Wh/s]      
         energy_change = curr_load_in + -1 *(avoidance_consumption + avionics_consumption);    
         temp_cap = battery_cap(i-1) + energy_change;
         
@@ -126,7 +133,7 @@ for i = length(trek_phase1)+1:length(time_vector)
             continue
         else %still avoiding rock
             time_avoiding_rock = time_avoiding_rock + 1;
-            curr_load_in = (extreme_rove(2)*curr_solar_offset/3600)*.5;    %[Wh/s]   
+            curr_load_in = (extreme_rove(2)*curr_solar_offset/3600);    %[Wh/s]   
             energy_change = curr_load_in + -1 *(avoidance_consumption + avionics_consumption); %[J/s] * 1Wh/3600J = Wh/s 
             temp_cap = battery_cap(i-1) + energy_change;
         
@@ -153,7 +160,7 @@ for i = length(trek_phase1)+1:length(time_vector)
         linear_distance_factor = straight_total_time / crater_avoidance_duration;
         avionics_consumption = (extreme_rove(1)/3600); %[J/s] * 1Wh/3600J = Wh/s
         avoidance_consumption = crater_turn_energy / (3600*crater_avoidance_duration); %[J/s] * 1Wh/3600J = Wh/s
-        curr_load_in = (extreme_rove(2)*curr_solar_offset/3600)*.5;    %[Wh/s]   
+        curr_load_in = (extreme_rove(2)*curr_solar_offset/3600);    %[Wh/s]   
         energy_change = curr_load_in + -1 *(avoidance_consumption + avionics_consumption); %[J/s] * 1Wh/3600J = Wh/s
         temp_cap = battery_cap(i-1) + energy_change;
         
@@ -186,7 +193,7 @@ for i = length(trek_phase1)+1:length(time_vector)
             continue
         else %still avoiding crater
             time_avoiding_crater = time_avoiding_crater + 1;
-            curr_load_in = (extreme_rove(2)*curr_solar_offset/3600)*.5;    %[Wh/s]   
+            curr_load_in = (extreme_rove(2)*curr_solar_offset/3600);    %[Wh/s]   
             energy_change = curr_load_in + -1 *(avoidance_consumption + avionics_consumption); %[J/s] * 1Wh/3600J = Wh/s        
             temp_cap = battery_cap(i-1) + energy_change;
         
@@ -208,6 +215,7 @@ for i = length(trek_phase1)+1:length(time_vector)
         if (shadow_found) %rover charging is null is in shadow
             in_shadow = true;
             curr_net_power = -1*curr_load_out;
+            is_charging = false;
         elseif (in_shadow && time_in_shadow < max_shadow_time)
             time_in_shadow = time_in_shadow + 1;
             curr_net_power = -1*curr_load_out;

@@ -10,14 +10,23 @@ tolerance  = 1e-2; %used to check if battery state of charge exceeds 100%
 time_vector = time_start: time_step: time_end;
 tv_length = length(time_vector);
 
+
+%%
+%occlusion defaults
+occ_index = 1;
+occ_multipliers = [1, 0.93, 0.8, 0.69, 0.57, 0.51, ...
+                    0.45, 0.26, 0.21, 0.24, 0.47, 0.74, 0.98];
+occ_times       = [7087, 14175, 21262, 28349, 35437, 42524, 49611, ...
+                    56699, 63786, 70873, 77961, 85048, 92135];
+
 %%
 %relevant modes where (1) load_out in Watts, (2) load_in in Watts
 %includes 30 percent power growth
-rove_link   = [51, 71.3];
-charge_link = [15, 71.3]; %if charging for over an hour, an extra 18W go to heaters
-nom_rove    = [46, 71.3];
-extreme_rove = [52, 71.3];
-charge_min  = [8, 71.3];  
+rove_link   = [58, 75];
+charge_link = [20, 75]; %if charging for over an hour, an extra 18W go to heaters
+nom_rove    = [53, 75];
+extreme_rove = [57, 75];
+charge_min  = [8, 75];  
      
 %%
 plan_trek_interval = [0: time_step: plan_duration*time_scale];
@@ -84,6 +93,9 @@ for i = 1:length(trek_phase1)
     elseif (ismember(spec_time, downlink_interval))
         curr_load_out = charge_link(1);
         curr_load_in  = charge_link(2)*curr_sangle_offset;
+    else 
+       curr_load_out = 0;
+       curr_load_in = 0;
     end
     
     if (mod(time_charging, max_charge_time) == 0)
@@ -94,7 +106,7 @@ for i = 1:length(trek_phase1)
     curr_net_power = curr_load_in - curr_load_out;
 
     if (i > 1)
-        energy_change = curr_net_power / time_scale;
+        energy_change = curr_net_power / 3600; %[W, or J/s, * 1Wh/3600J = Wh/s
         battery_cap(i) = battery_cap(i-1) + energy_change;
         battery_soc(i) = battery_cap(i)/battery_total;    
     else
