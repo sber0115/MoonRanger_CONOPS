@@ -1,7 +1,3 @@
-%%
-clear
-clc
-close all
 
 %% User can see how energy expenditure changes by disabling/enabling rocks/craters
 init_soc = .4;             %initial state of charge

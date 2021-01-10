@@ -1,3 +1,7 @@
+close all
+clc
+clear
+
 run('user_params.m');
 run('Power_Conops_constants.m');
 run('RockDistribution.m');

@@ -30,7 +30,7 @@ distance_covered = velocity_m;
 battery_soc        = zeros(1,tv_length);
 battery_cap        = zeros(1,tv_length);
 distance_travelled = zeros(1,tv_length);
-azimuth_angle    = zeros(1, tv_length); %in degrees
+azimuth_angle      = zeros(1, tv_length); %in degrees
 
 
 
