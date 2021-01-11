@@ -12,7 +12,7 @@ enable_shadows = true;
 enable_craters = true;
 
 max_soc = 1;           %maximum state of charge [100%]
-max_charge_period = 1; %[Hrs]
+max_charge_period = 0; %[Hrs]
 max_shadow_time   = 3*60; %[secs, 3 mins total]
-heat_motor_power = 18; %extra power to motors when charging for over an hr
+heat_motor_power = 30; 
 
