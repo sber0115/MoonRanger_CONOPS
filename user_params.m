@@ -13,6 +13,6 @@ enable_craters = true;
 
 max_soc = 1;           %maximum state of charge [100%]
 max_charge_period = 0; %[Hrs]
-max_shadow_time   = 3*60; %[secs, 3 mins total]
+max_shadow_time   = 60*60; %[secs, 3 mins total]
 heat_motor_power = 30; 
 

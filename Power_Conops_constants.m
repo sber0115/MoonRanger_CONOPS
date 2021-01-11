@@ -16,13 +16,27 @@ tv_length = length(time_vector);
 occ_index = 1;
 occ_times       = [7087, 14175, 21262, 28349, 35437, 42524, 49611, ...
                     56699, 63786, 70873, 77961, 85048, 92135];
-                
+
+%0 percent interpolation (site 1)
 occ_multipliers_site1 = [1, 0.93, 0.8, 0.69, 0.57, 0.51, ...
                     0.45, 0.26, 0.21, 0.24, 0.47, 0.74, 0.98];
         
+%100 percent interpolation (site 2)
 occ_multipliers_site2 = [1, 0.97, 0.91, 0.83, 0.73, 0.76 ...
                         0.82, 0.9, 0.9, 0.9, 0.93, 0.97, 0.98];
 
+%25 percent interpolation (site 3)
+occ_multipliers_site3 = [1, 0.97, 0.91, 0.83, 0.73, 0.76 ...
+                        0.82, 0.9, 0.9, 0.9, 0.93, 0.97, 0.98];
+
+%50 percent interpolation (site 4)
+occ_multipliers_site4 = [1, 0.97, 0.91, 0.83, 0.73, 0.76 ...
+                        0.82, 0.9, 0.9, 0.9, 0.93, 0.97, 0.98];
+
+%75 percent interpolation (site 25)
+occ_multipliers_site5 = [1, 0.97, 0.91, 0.83, 0.73, 0.76 ...
+                        0.82, 0.9, 0.9, 0.9, 0.93, 0.97, 0.98];
+                    
 occ_multipliers_interp = [1, 0.93, 0.8, 0.69, 0.57, 0.51, ...
                     0.45, 0.26, 0.21, 0.24, 0.47, 0.74, 0.98];    
 %%
@@ -91,6 +105,8 @@ for i = 1:length(trek_phase1)
     if (~soc_under_100)
         battery_cap(i) = battery_cap(i-1);
         battery_soc(i) = battery_soc(i-1); 
+        battery_cap_2(i) = battery_cap_2(i-1);
+        battery_soc_2(i) = battery_soc_2(i-1); 
         continue;
     end
     
@@ -119,10 +135,15 @@ for i = 1:length(trek_phase1)
     if (i > 1)
         energy_change = curr_net_power / 3600; %[W, or J/s, * 1Wh/3600J = Wh/s
         battery_cap(i) = battery_cap(i-1) + energy_change;
-        battery_soc(i) = battery_cap(i)/battery_total;    
+        battery_soc(i) = battery_cap(i)/battery_total;   
+        battery_cap_2(i) = battery_cap_2(i-1) + energy_change;
+        battery_soc_2(i) = battery_cap_2(i)/battery_total;    
+        
     else
         battery_cap(i) = battery_total*init_soc;
         battery_soc(i) = battery_cap(i)/battery_total;
+        battery_cap_2(i) = battery_total*init_soc;
+        battery_soc_2(i) = battery_cap(i)/battery_total;
     end
     
     soc_under_100 = abs(battery_soc(i) - 1) > 1e-2;
