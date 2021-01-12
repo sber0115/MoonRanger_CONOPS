@@ -11,21 +11,20 @@ time_vector = time_start: time_step: time_end;
 tv_length = length(time_vector);
 
 
-%%
-%occlusion defaults
+%% Occlusion defaults
 occ_index = 1;
 occ_times       = [7087, 14175, 21262, 28349, 35437, 42524, 49611, ...
                     56699, 63786, 70873, 77961, 85048, 92135];
 
-%0 percent interpolation (site 1)
+%100 percent interpolation (site 1)
 occ_multipliers_site1 = [1, 0.93, 0.8, 0.69, 0.57, 0.51, ...
                     0.45, 0.26, 0.21, 0.24, 0.47, 0.74, 0.98];
         
-%100 percent interpolation (site 2)
+%0 percent interpolation (site 2)
 occ_multipliers_site2 = [1, 0.97, 0.91, 0.83, 0.73, 0.76 ...
                         0.82, 0.9, 0.9, 0.9, 0.93, 0.97, 0.98];
 
-%25 percent interpolation (site 3)
+%75 percent interpolation (site 3)
 occ_multipliers_site3 = [1, 0.94, 0.835, 0.725, 0.61, 0.5725, ...
                         0.5425, 0.42, 0.3825, 0.405, 0.585, 0.7975, 0.981];
 
@@ -35,18 +34,23 @@ occ_multipliers_site4 = [1, 0.95, 0.86, 0.76, 0.65, 0.635, 0.635, ...
                         0.58, 0.555, 0.57, 0.7, 0.855, 0.981];
 
 
-%75 percent interpolation (site 25)
+%25 percent interpolation (site 25)
 occ_multipliers_site5 = [1, 0.96, 0.885, 0.795, 0.69, 0.6975, ...
                         0.7275, 0.74, 0.7275, 0.735, 0.815, 0.9125, 0.98];
+                    
+%130 percent interpolation
+occ_multipliers_site6 = [1, 0.918, 0.78, 0.648, 0.522, 0.435, ...
+                        0.339, 0.068, 0.003, 0.042, 0.332, 0.671, 0.98];
 
-%%
+
+%% Power consumption and generation for different modes
 %relevant modes where (1) load_out in Watts, (2) load_in in Watts
 %includes 30 percent power growth
-rove_link   = [58 + heat_motor_power, 75];
-charge_link = [17 + heat_motor_power, 75]; %if charging for over an hour, an extra 18W go to heaters
-nom_rove    = [53 + heat_motor_power, 75];
-extreme_rove = [57 + heat_motor_power, 75];
-charge_min  = [8 + heat_motor_power, 75];  
+rove_link   = [50 + heater_power, 75];
+charge_link = [17 + heater_power, 75]; %if charging for over an hour, an extra 18W go to heaters
+nom_rove    = [53 + heater_power, 75];
+extreme_rove = [57 + heater_power, 75];
+charge_min  = [8 + heater_power, 75];  
      
 %%
 plan_trek_interval = [0: time_step: plan_duration*time_scale];
@@ -59,7 +63,7 @@ distance_covered = velocity_m;
 battery_soc        = zeros(1,tv_length);
 battery_cap        = zeros(1,tv_length);
 
-%% Initialize vectors for battery soc and cap of overlaid curve (power fraction 2)
+% Initialize vectors for battery soc and cap of overlaid curve (power fraction 2)
 battery_soc_2 = zeros(1, tv_length);
 battery_cap_2 = zeros(1,tv_length);
 %%
@@ -127,7 +131,7 @@ for i = 1:length(trek_phase1)
     
     if (mod(time_charging, max_charge_time) == 0)
         is_heating_motors = true;
-        curr_load_in = charge_min(2)*curr_sangle_offset - heat_motor_power;
+        curr_load_in = charge_min(2)*curr_sangle_offset - heater_power ;
     end
     
     curr_net_power = curr_load_in - curr_load_out;

@@ -44,6 +44,11 @@ is_avoiding_crater = false;
 in_shadow    = false;
 
 change_power_fraction = false;
+power_fraction_site1 = 0;
+power_fraction_site2 = 0;
+power_fraction_site3 = 0;
+power_fraction_site4 = 0;
+power_fraction_site5 = 0;
 
 time_avoiding_rock = 0; %[secs]
 time_avoiding_crater = 0; %[secs]
@@ -76,6 +81,21 @@ for i = length(trek_phase1)+1:length(time_vector)
     power_fraction_site3 = occ_multipliers_site3(occ_index);
     power_fraction_site4 = occ_multipliers_site4(occ_index);
     power_fraction_site5 = occ_multipliers_site5(occ_index);
+    power_fraction_site6 = occ_multipliers_site6(occ_index);
+    
+    power_fraction_to_use = power_fraction_site1; %100 percent occlusion
+    
+    if (choose_power_multiplier == 2)
+        power_fraction_to_use = power_fraction_site2; %0 percent occlusion
+    elseif (choose_power_multiplier == 3)
+        power_fraction_to_use = power_fraction_site3; %25 percent
+    elseif (choose_power_multiplier == 4)
+        power_fraction_to_use = power_fraction_site4; %50 percent
+    elseif (choose_power_multiplier == 5)
+        power_fraction_to_use = power_fraction_site5; %75 percent
+    elseif (choose_power_multiplier == 6)
+        power_fraction_to_use = power_fraction_site6; %130 percent
+    end
     
     %power_fraction is the factor by which max power is multiplied (< 1)
     
@@ -104,7 +124,7 @@ for i = length(trek_phase1)+1:length(time_vector)
         %expended over the duration of the entire manuever, so we must
         %divide by the manuever duration 
         avoidance_consumption = rock_turn_energy / (3600*rock_avoidance_duration); %[Wh/s]
-        curr_load_in = (extreme_rove(2)*power_fraction_site1/3600);    %[Wh/s]      
+        curr_load_in = (extreme_rove(2)*power_fraction_to_use/3600);    %[Wh/s]      
         energy_change = curr_load_in + -1 *(avoidance_consumption + avionics_consumption);    
         temp_cap = battery_cap(i-1) + energy_change;
         
@@ -125,7 +145,7 @@ for i = length(trek_phase1)+1:length(time_vector)
         if (time_avoiding_rock == rock_avoidance_duration-1)
             is_avoiding_rock = false;
             time_avoiding_rock = 0;
-            curr_net_power = nom_rove(2)*power_fraction_site1 - nom_rove(1);
+            curr_net_power = nom_rove(2)*power_fraction_to_use - nom_rove(1);
             energy_change = curr_net_power / 3600; %[J/s] * 1Wh/3600J = Wh/s
             temp_cap = battery_cap(i-1) + energy_change;
         
@@ -139,7 +159,7 @@ for i = length(trek_phase1)+1:length(time_vector)
             continue
         else %still avoiding rock
             time_avoiding_rock = time_avoiding_rock + 1;
-            curr_load_in = (extreme_rove(2)*power_fraction_site1/3600);    %[Wh/s]   
+            curr_load_in = (extreme_rove(2)*power_fraction_to_use/3600);    %[Wh/s]   
             energy_change = curr_load_in + -1 *(avoidance_consumption + avionics_consumption); %[J/s] * 1Wh/3600J = Wh/s 
             temp_cap = battery_cap(i-1) + energy_change;
         
@@ -166,7 +186,7 @@ for i = length(trek_phase1)+1:length(time_vector)
         linear_distance_factor = straight_total_time / crater_avoidance_duration;
         avionics_consumption = (extreme_rove(1)/3600); %[J/s] * 1Wh/3600J = Wh/s
         avoidance_consumption = crater_turn_energy / (3600*crater_avoidance_duration); %[J/s] * 1Wh/3600J = Wh/s
-        curr_load_in = (extreme_rove(2)*power_fraction_site1/3600);    %[Wh/s]   
+        curr_load_in = (extreme_rove(2)*power_fraction_to_use/3600);    %[Wh/s]   
         energy_change = curr_load_in + -1 *(avoidance_consumption + avionics_consumption); %[J/s] * 1Wh/3600J = Wh/s
         temp_cap = battery_cap(i-1) + energy_change;
         
@@ -185,7 +205,7 @@ for i = length(trek_phase1)+1:length(time_vector)
             is_avoiding_crater = false;
             time_avoiding_crater = 0;
             %finished avoiding crater so back to nominal rove
-            curr_net_power = nom_rove(2)*power_fraction_site1 - nom_rove(1);
+            curr_net_power = nom_rove(2)*power_fraction_to_use - nom_rove(1);
             energy_change = curr_net_power / 3600; %[J/s] * 1Wh/3600J = Wh/s
             temp_cap = battery_cap(i-1) + energy_change;
         
@@ -199,7 +219,7 @@ for i = length(trek_phase1)+1:length(time_vector)
             continue
         else %still avoiding crater
             time_avoiding_crater = time_avoiding_crater + 1;
-            curr_load_in = (extreme_rove(2)*power_fraction_site1/3600);    %[Wh/s]   
+            curr_load_in = (extreme_rove(2)*power_fraction_to_use/3600);    %[Wh/s]   
             energy_change = curr_load_in + -1 *(avoidance_consumption + avionics_consumption); %[J/s] * 1Wh/3600J = Wh/s        
             temp_cap = battery_cap(i-1) + energy_change;
         
@@ -216,7 +236,7 @@ for i = length(trek_phase1)+1:length(time_vector)
 %% Control flow to handle charging periods
     if (battery_soc(i-1) < begin_charge_soc && ~is_charging)
         curr_load_out = charge_min(1);
-        curr_load_in  = charge_min(2)*power_fraction_site1;
+        curr_load_in  = charge_min(2)*power_fraction_to_use;
         curr_net_power = curr_load_in - curr_load_out;
         if (shadow_found) %rover charging is null is in shadow
             in_shadow = true;
@@ -247,7 +267,7 @@ for i = length(trek_phase1)+1:length(time_vector)
     elseif (is_charging)
         if (battery_soc(i-1) >= end_charge_soc) %SOC reached charging threshold
             curr_load_out = nom_rove(1);
-            curr_load_in  = nom_rove(2)*power_fraction_site1;
+            curr_load_in  = nom_rove(2)*power_fraction_to_use;
             curr_net_power = curr_load_in - curr_load_out;
             energy_change = curr_net_power / 3600;
             temp_cap = battery_cap(i-1) + energy_change;
@@ -264,7 +284,7 @@ for i = length(trek_phase1)+1:length(time_vector)
             continue
         else %use power consumption/generation values during charging mode
             curr_load_out = charge_min(1);
-            curr_load_in  = charge_min(2)*power_fraction_site1;
+            curr_load_in  = charge_min(2)*power_fraction_to_use;
             curr_net_power = curr_load_in - curr_load_out;       
             energy_change = curr_net_power / 3600;
             temp_cap = battery_cap(i-1) + energy_change;
@@ -279,7 +299,7 @@ for i = length(trek_phase1)+1:length(time_vector)
         end
     else %no need to charge/is not charging, just rove
         curr_load_out = nom_rove(1);
-        curr_load_in  = nom_rove(2)*power_fraction_site1;
+        curr_load_in  = nom_rove(2)*power_fraction_to_use;
         curr_net_power = curr_load_in - curr_load_out;
         if (shadow_found) %may encounter shadow
             in_shadow = true;
